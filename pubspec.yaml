@@ -1,6 +1,6 @@
 name: bigun
 description: "A new Flutter project."
-publish_to: 'none'
+publish_to: "none"
 version: 0.1.0
 
 environment:
@@ -9,6 +9,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  cached_network_image: ^3.3.1
+  flutter_sound: ^9.2.13
+  intl: ^0.18.1
 
 dev_dependencies:
   flutter_test:
