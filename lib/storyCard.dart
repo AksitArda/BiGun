@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'audioComponent.dart';
 import 'package:intl/intl.dart';
 
 class Story {
@@ -44,11 +45,7 @@ class StoryCard extends StatelessWidget {
               ),
               SizedBox(width: 12),
               Expanded(
-                child: Image.asset(
-                  'assets/wave_placeholder.png',
-                  height: 40,
-                  fit: BoxFit.cover,
-                ),
+                child: AudioPlayerComponent(audioUrl: story.audioUrl),
               ),
               SizedBox(width: 8),
               Text(
