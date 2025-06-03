@@ -11,15 +11,14 @@ class StoryFeedPage extends StatelessWidget {
     Story(
       username: 'Ayşe023',
       avatarUrl: 'https://i.pravatar.cc/150?img=1',
-      audioUrl:
-          'https://cdn.discordapp.com/attachments/825383394258845727/1346998575221047448/S4nity_Track8.mp3?ex=683d94ee&is=683c436e&hm=370dc36497630aab14ad7556836867b8c83f0c6610bb7e290676e340971337a1&',
+      audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
       time: DateTime.now().subtract(Duration(minutes: 10)),
       comments: ['Bu tarz şeyleri çok düşünme asdlkjah'],
     ),
     Story(
       username: 'Atilla0',
       avatarUrl: 'https://i.pravatar.cc/150?img=3',
-      audioUrl: 'https://example.com/audio2.aac',
+      audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
       time: DateTime.now().subtract(Duration(minutes: 30)),
       comments: ['Antalyalı mısın kankaa?'],
     ),

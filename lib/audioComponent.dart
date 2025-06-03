@@ -175,18 +175,20 @@ class _AudioPlayerComponentState extends State<AudioPlayerComponent> {
   Widget _buildPlayButton() {
     switch (_playerState) {
       case PlayerState.loading:
-        return const CircularProgressIndicator();
+        return const CircularProgressIndicator(
+          color: Colors.white,
+        );
       case PlayerState.playing:
         return IconButton(
           icon: const Icon(Icons.pause, size: 40),
           onPressed: _pause,
-          color: Colors.blue,
+          color: Colors.white,
         );
       case PlayerState.paused:
         return IconButton(
           icon: const Icon(Icons.play_arrow, size: 40),
           onPressed: _resume,
-          color: Colors.blue,
+          color: Colors.white,
         );
       case PlayerState.stopped:
       case PlayerState.error:
@@ -194,7 +196,7 @@ class _AudioPlayerComponentState extends State<AudioPlayerComponent> {
         return IconButton(
           icon: const Icon(Icons.play_arrow, size: 40),
           onPressed: _play,
-          color: Colors.green,
+          color: Colors.white,
         );
     }
   }
@@ -202,47 +204,17 @@ class _AudioPlayerComponentState extends State<AudioPlayerComponent> {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.all(16.0),
-      elevation: 4.0,
+      color: Colors.transparent,
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(2.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            if (widget.title != null)
-              Text(
-                widget.title!,
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-            const SizedBox(height: 10),
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: <Widget>[
                 _buildPlayButton(),
-                const SizedBox(width: 20),
-                IconButton(
-                  icon: const Icon(Icons.stop, size: 40),
-                  onPressed: _stop,
-                  color: Colors.red,
-                ),
               ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Durum: ${_playerState.name.toUpperCase()}',
-              style: TextStyle(
-                color: _playerState == PlayerState.error
-                    ? Colors.red
-                    : Colors.black,
-              ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              'URL: ${widget.audioUrl}',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
         ),
