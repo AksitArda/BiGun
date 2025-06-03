@@ -1,48 +1,24 @@
 import 'package:flutter/material.dart';
-import 'storyCard.dart';
+import 'screens/feed_screen.dart';
 
 void main() {
-  runApp(StoryFeedPage());
+  runApp(MyApp());
 }
 
-class StoryFeedPage extends StatelessWidget {
-  final List<Story> stories = [
-    // Örnek veriler
-    Story(
-      username: 'Ayşe023',
-      avatarUrl: 'https://i.pravatar.cc/150?img=1',
-      audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-      time: DateTime.now().subtract(Duration(minutes: 10)),
-      comments: ['Bu tarz şeyleri çok düşünme asdlkjah'],
-    ),
-    Story(
-      username: 'Atilla0',
-      avatarUrl: 'https://i.pravatar.cc/150?img=3',
-      audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-      time: DateTime.now().subtract(Duration(minutes: 30)),
-      comments: ['Antalyalı mısın kankaa?'],
-    ),
-  ];
-
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        home: Scaffold(
-      backgroundColor: Color(0xFF1F1F1F),
-      body: ListView.builder(
-        padding: EdgeInsets.only(bottom: 80),
-        itemCount: stories.length,
-        itemBuilder: (context, index) {
-          return StoryCard(story: stories[index]);
-        },
+      title: 'BiGün',
+      theme: ThemeData(
+        primarySwatch: Colors.green,
+        scaffoldBackgroundColor: Color(0xFF1F1F1F),
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.green,
-        child: Icon(Icons.mic),
-        onPressed: () {
-          // Ses kaydı işlemi burada olacak
-        },
-      ),
-    ));
+      home: FeedScreen(),
+    );
   }
 }
