@@ -30,18 +30,15 @@ class AudioWaveVisualizer extends StatelessWidget {
           onTapDown: (details) => _handleTapDown(details, constraints),
           child: Container(
             height: 40,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-            ),
             child: CustomPaint(
               painter: WaveformPainter(
                 waveformData: waveformData,
                 progress: progress,
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.grey[600]!.withOpacity(0.5),
                 progressColor: Colors.white,
                 isInteractive: onSeek != null,
               ),
-              size: Size.infinite,
+              size: Size(constraints.maxWidth, constraints.maxHeight),
             ),
           ),
         );
@@ -68,60 +65,24 @@ class WaveformPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..strokeWidth = 2.5
+      ..strokeWidth = 2
       ..strokeCap = StrokeCap.round;
 
     final barWidth = size.width / waveformData.length;
     final progressWidth = size.width * progress;
 
-    // Hover efekti için gradient
-    if (isInteractive) {
-      final gradient = LinearGradient(
-        begin: Alignment.centerLeft,
-        end: Alignment.centerRight,
-        colors: [
-          Colors.white.withOpacity(0.1),
-          Colors.white.withOpacity(0.05),
-        ],
-      );
-
-      final rect = Rect.fromLTWH(0, 0, size.width, size.height);
-      final gradientPaint = Paint()..shader = gradient.createShader(rect);
-      canvas.drawRect(rect, gradientPaint);
-    }
-
     for (var i = 0; i < waveformData.length; i++) {
       final x = i * barWidth;
-      final height = waveformData[i] * size.height * 0.8; // Biraz daha küçük barlar
+      final height = waveformData[i] * size.height * 0.7; // Biraz daha küçük barlar
       final top = (size.height - height) / 2;
 
       // Çizgi rengi, progress'e göre değişiyor
       paint.color = x <= progressWidth ? progressColor : color;
 
-      // Bar yerine yuvarlak noktalar çizelim
-      canvas.drawCircle(
-        Offset(x + barWidth / 2, top + height / 2),
-        paint.strokeWidth / 2,
-        paint,
-      );
-      
       canvas.drawLine(
         Offset(x + barWidth / 2, top),
         Offset(x + barWidth / 2, top + height),
         paint,
-      );
-    }
-
-    // İlerleme çizgisi
-    if (isInteractive) {
-      final progressPaint = Paint()
-        ..color = progressColor
-        ..strokeWidth = 2;
-      
-      canvas.drawLine(
-        Offset(progressWidth, 0),
-        Offset(progressWidth, size.height),
-        progressPaint,
       );
     }
   }

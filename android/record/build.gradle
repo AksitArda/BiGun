@@ -1,0 +1,4 @@
+android {
+    namespace "com.llfbandit.record"
+    // ... existing code ...
+} 
