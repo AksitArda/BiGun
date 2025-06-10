@@ -3,6 +3,7 @@ import 'package:bigun/core/theme/app_theme.dart';
 import 'package:bigun/models/story.dart';
 import 'package:bigun/components/audio_story_card.dart';
 import 'package:bigun/components/settings_bottom_sheet.dart';
+import 'messages_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -66,10 +67,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.primaryColor,
-      appBar: AppBar(
+      backgroundColor: AppTheme.primaryColor,      appBar: AppBar(
         title: Text('Profil', style: AppTheme.headlineStyle),
         actions: [
+          IconButton(
+            icon: Icon(Icons.message_outlined, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => MessagesScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: Icon(Icons.settings, color: Colors.white),
             onPressed: _showSettingsBottomSheet,

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../models/story.dart';
 import '../components/audio_story_card.dart';
 import '../components/record_button.dart';
+import '../core/theme/app_theme.dart';
 import 'profile_screen.dart';
+import 'messages_screen.dart';
 
 class FeedScreen extends StatefulWidget {
   @override
@@ -81,8 +83,39 @@ class _FeedScreenState extends State<FeedScreen> {
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
-        ),
-        actions: [
+        ),        actions: [
+          Stack(
+            children: [
+              IconButton(
+                icon: Icon(Icons.message_outlined, color: Colors.white),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => MessagesScreen()),
+                  );
+                },
+              ),
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  padding: EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    '2', // TODO: Get actual unread count
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
           IconButton(
             icon: CircleAvatar(
               radius: 16,
