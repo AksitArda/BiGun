@@ -6,6 +6,26 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path_provider/path_provider.dart';
 
+/// Ses seviyesi hesaplama sınıfı
+class AudioLevelCalculator {
+  static const double _minDb = -45.0;
+  static const double _maxDb = 0.0;
+  static const double _dbRange = _maxDb - _minDb;
+  
+  /// Ham amplitude değerini 0-1 arasında normalize edilmiş bir değere dönüştürür
+  static double calculateNormalizedLevel(Amplitude amplitude) {
+    final double current = amplitude.current ?? _minDb;
+    final double normalized = (current - _minDb) / _dbRange;
+    return normalized.clamp(0.0, 1.0);
+  }
+  
+  /// Normalize edilmiş değeri yumuşatır
+  static double smoothLevel(double currentLevel, double previousLevel) {
+    const double smoothingFactor = 0.6;
+    return (previousLevel * smoothingFactor) + (currentLevel * (1 - smoothingFactor));
+  }
+}
+
 /// A button widget that handles audio recording with visual feedback.
 /// Long press to start recording, release to stop.
 class RecordButton extends StatefulWidget {
@@ -28,7 +48,7 @@ class _RecordButtonState extends State<RecordButton> with SingleTickerProviderSt
   static const Duration _sampleRate = Duration(milliseconds: 50);
   
   // Controllers and core state
-  final _audioRecorder = Record();
+  final _audioRecorder = AudioRecorder();
   late final AnimationController _scaleController;
   late final Animation<double> _scaleAnimation;
   
@@ -39,6 +59,7 @@ class _RecordButtonState extends State<RecordButton> with SingleTickerProviderSt
   Duration _recordingDuration = Duration.zero;
   String? _recordingPath;
   List<double> _waveformData = [];
+  double _previousLevel = 0.0;
 
   @override
   void initState() {
@@ -99,13 +120,19 @@ class _RecordButtonState extends State<RecordButton> with SingleTickerProviderSt
   }
 
   Future<void> _initializeRecording() async {
+    final tempPath = '${DateTime.now().millisecondsSinceEpoch}.m4a';
+    
     if (!kIsWeb) {
       final tempDir = await getTemporaryDirectory();
-      _recordingPath = '${tempDir.path}/temp_${DateTime.now().millisecondsSinceEpoch}.m4a';
-      await _audioRecorder.start(path: _recordingPath!);
+      _recordingPath = '${tempDir.path}/$tempPath';
     } else {
-      await _audioRecorder.start();
+      _recordingPath = tempPath;
     }
+    
+    await _audioRecorder.start(
+      RecordConfig(encoder: AudioEncoder.aacLc),
+      path: _recordingPath!,
+    );
   }
 
   Future<void> _startRecordingSession() async {
@@ -123,13 +150,14 @@ class _RecordButtonState extends State<RecordButton> with SingleTickerProviderSt
       if (!_isRecording) return;
       
       final amplitude = await _audioRecorder.getAmplitude();
-      final normalized = (amplitude.current ?? -160) + 160;  // -160 to 0 range
-      final value = (normalized / 160).clamp(0.0, 1.0);     // 0 to 1 range
+      final currentLevel = AudioLevelCalculator.calculateNormalizedLevel(amplitude);
+      final smoothedLevel = AudioLevelCalculator.smoothLevel(currentLevel, _previousLevel);
       
       if (mounted) {
         setState(() {
           _recordingDuration += _sampleRate;
-          _updateWaveformData(value);
+          _updateWaveformData(smoothedLevel);
+          _previousLevel = smoothedLevel;
         });
       }
     });
@@ -186,132 +214,248 @@ class _RecordButtonState extends State<RecordButton> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Stack(
+      clipBehavior: Clip.none,
       alignment: Alignment.center,
       children: [
-        if (_isRecording && _waveformData.isNotEmpty)
-          _buildWaveformVisualizer(),
-        _buildRecordButton(),
-      ],
-    );
-  }
-
-  Widget _buildWaveformVisualizer() {
-    return Container(
-      width: 200,
-      height: 60,
-      margin: const EdgeInsets.only(bottom: 80),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(30),
-        child: Container(
-          color: Colors.black26,
-          padding: const EdgeInsets.all(8),
-          child: CustomPaint(
-            painter: WaveformPainter(
-              waveformData: _waveformData,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRecordButton() {
-    return GestureDetector(
-      onLongPressStart: (_) => _startRecording(),
-      onLongPressEnd: (_) => _stopRecording(),
-      child: AnimatedBuilder(
-        animation: _scaleAnimation,
-        builder: (context, child) => Transform.scale(
-          scale: _scaleAnimation.value,
-          child: Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _isRecording ? Colors.red : Colors.green,
-              boxShadow: [
-                BoxShadow(
-                  color: (_isRecording ? Colors.red : Colors.green).withOpacity(0.3),
-                  blurRadius: 8,
-                  spreadRadius: _isLongPressing ? 4 : 0,
-                ),
-              ],
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.mic,
-                color: Colors.white,
-                size: 24,
+        AnimatedPositioned(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          bottom: _isRecording ? 100 : 20,
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 200),
+            opacity: _isRecording ? 1.0 : 0.0,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.8,
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+              decoration: BoxDecoration(
+                color: Colors.black87,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 8,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Kaydediliyor...',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  if (_waveformData.isNotEmpty)
+                    Container(
+                      height: 60,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(30),
+                        child: CustomPaint(
+                          painter: WaveformPainter(
+                            waveformData: _waveformData,
+                            color: Colors.green,
+                            isRecording: true,
+                          ),
+                          size: Size.fromHeight(60),
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _formatDuration(_recordingDuration),
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
         ),
-      ),
+        Container(
+          width: 56,
+          height: 56,
+          child: GestureDetector(
+            onLongPressStart: (_) => _startRecording(),
+            onLongPressEnd: (_) => _stopRecording(),
+            child: AnimatedBuilder(
+              animation: _scaleAnimation,
+              builder: (context, child) => Transform.scale(
+                scale: _scaleAnimation.value,
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _isRecording ? Colors.red : Colors.green,
+                    boxShadow: [
+                      BoxShadow(
+                        color: (_isRecording ? Colors.red : Colors.green).withOpacity(0.3),
+                        blurRadius: 8,
+                        spreadRadius: _isLongPressing ? 4 : 0,
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.mic,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    return '$minutes:$seconds';
   }
 }
 
 class WaveformPainter extends CustomPainter {
   final List<double> waveformData;
   final Color color;
+  final bool isRecording;
 
   const WaveformPainter({
     required this.waveformData,
     required this.color,
+    this.isRecording = false,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     if (waveformData.isEmpty) return;
 
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 2.5
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    _drawWaveform(canvas, size, paint);
-  }
-
-  void _drawWaveform(Canvas canvas, Size size, Paint paint) {
-    final path = Path();
-    final spacing = size.width / (waveformData.length - 1);
+    final barWidth = 3.0;
+    final spacing = 3.0;
+    final totalBarWidth = barWidth + spacing;
     final middle = size.height / 2;
-    final scaleFactor = size.height / 2;
+    
+    // Kaç çubuk sığabileceğini hesapla
+    final maxBars = (size.width / totalBarWidth).floor();
+    final startX = (size.width - (maxBars * totalBarWidth)) / 2;
 
-    // Draw upper half
-    path.moveTo(0, middle);
-    for (var i = 0; i < waveformData.length; i++) {
-      final x = i * spacing;
-      final amplitude = waveformData[i] * scaleFactor;
-      path.lineTo(x, middle - amplitude);
-    }
-
-    // Draw lower half (mirror)
-    path.lineTo(size.width, middle);
-    for (var i = waveformData.length - 1; i >= 0; i--) {
-      final x = i * spacing;
-      final amplitude = waveformData[i] * scaleFactor;
-      path.lineTo(x, middle + amplitude);
-    }
-
-    path.close();
-
-    // Fill with semi-transparent color
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = color.withOpacity(0.1)
-        ..style = PaintingStyle.fill,
+    // Gradient tanımla
+    final gradient = LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        color,
+        color.withOpacity(0.5),
+      ],
     );
 
-    // Draw outline
-    canvas.drawPath(path, paint);
+    final paint = Paint()
+      ..style = PaintingStyle.fill
+      ..shader = gradient.createShader(
+        Rect.fromLTWH(0, 0, size.width, size.height)
+      );
+
+    // WhatsApp tarzı minimum yükseklik
+    const minHeight = 4.0;
+    const maxHeight = 20.0;
+
+    // Her bir çubuğu çiz
+    for (var i = 0; i < maxBars && i < waveformData.length; i++) {
+      final x = startX + (i * totalBarWidth);
+      final amplitude = waveformData[i].clamp(0.0, 1.0);
+      
+      // Yüksekliği hesapla (minimum 4 piksel)
+      final height = minHeight + (amplitude * (maxHeight - minHeight));
+      
+      // Üst ve alt çubukları çiz
+      final topRect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          x,
+          middle - height,
+          barWidth,
+          height
+        ),
+        Radius.circular(barWidth / 2)
+      );
+
+      final bottomRect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          x,
+          middle,
+          barWidth,
+          height
+        ),
+        Radius.circular(barWidth / 2)
+      );
+
+      canvas.drawRRect(topRect, paint);
+      canvas.drawRRect(bottomRect, paint);
+    }
+
+    // Kayıt sırasında parlama efekti
+    if (isRecording) {
+      final glowPaint = Paint()
+        ..color = color.withOpacity(0.3)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 2);
+
+      for (var i = 0; i < maxBars && i < waveformData.length; i++) {
+        final x = startX + (i * totalBarWidth);
+        final amplitude = waveformData[i].clamp(0.0, 1.0);
+        final height = minHeight + (amplitude * (maxHeight - minHeight));
+
+        final topRect = RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            x,
+            middle - height,
+            barWidth,
+            height
+          ),
+          Radius.circular(barWidth / 2)
+        );
+
+        final bottomRect = RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            x,
+            middle,
+            barWidth,
+            height
+          ),
+          Radius.circular(barWidth / 2)
+        );
+
+        canvas.drawRRect(topRect, glowPaint);
+        canvas.drawRRect(bottomRect, glowPaint);
+      }
+    }
   }
 
   @override
-  bool shouldRepaint(covariant WaveformPainter oldDelegate) {
-    return oldDelegate.waveformData != waveformData || oldDelegate.color != color;
+  bool shouldRepaint(WaveformPainter oldDelegate) {
+    return oldDelegate.waveformData != waveformData ||
+           oldDelegate.color != color ||
+           oldDelegate.isRecording != isRecording;
   }
 } 

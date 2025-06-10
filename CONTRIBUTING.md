@@ -1,130 +1,148 @@
 # BiGun - Audio Story Sharing App
 
 ## Project Overview
-BiGun is a social media application where users can share audio stories. The app features a modern, minimalist design with a focus on audio visualization and smooth user interactions.
+BiGun, kullanıcıların sesli hikayeler paylaşabileceği modern bir sosyal medya uygulamasıdır. WhatsApp benzeri ses görselleştirmesi ve minimalist tasarımı ile kullanıcı dostu bir deneyim sunar.
 
 ## Project Structure
 ```
 lib/
-├── components/
-│   ├── audio_story_card.dart    # Card widget for displaying audio stories
-│   ├── audio_wave_visualizer.dart # Audio waveform visualization
-│   └── record_button.dart       # Custom recording button with animations
-├── screens/
-│   └── feed_screen.dart         # Main feed screen showing audio stories
-├── models/                      # Data models
-├── utils/                       # Utility functions and constants
-└── main.dart                    # App entry point
+├── core/
+│   ├── services/
+│   │   └── audio_service.dart    # Ses yönetimi ve önbellek
+│   └── theme/
+│       └── app_theme.dart        # Tema yapılandırması
+├── features/
+│   ├── feed/
+│   │   ├── repositories/
+│   │   │   └── story_repository.dart  # Hikaye veri yönetimi
+│   │   └── screens/
+│   │       └── feed_screen.dart       # Ana feed ekranı
+│   └── audio/
+│       └── components/
+│           ├── audio_story_card.dart  # Ses hikayesi kartı
+│           └── record_button.dart     # Kayıt düğmesi
+├── models/
+│   └── story.dart                # Veri modelleri
+└── main.dart                     # Uygulama giriş noktası
 ```
 
 ## Key Features
-1. **Audio Recording**
-   - Long-press to record functionality
-   - Real-time waveform visualization
-   - Proper file handling and permissions
-   - Error handling and user feedback
 
-2. **Audio Playback**
-   - Waveform visualization during playback
-   - Tap-to-seek functionality
-   - Play/pause controls
-   - Progress tracking
+### 1. Ses Kaydı
+- WhatsApp tarzı ses kaydı arayüzü
+- Gerçek zamanlı ses dalgası görselleştirmesi
+- Basılı tutarak kayıt yapma
+- Otomatik dosya yönetimi ve izin kontrolü
 
-3. **UI/UX**
-   - Dark theme
-   - Modern, minimalist design
-   - Smooth animations
-   - Responsive layout
+### 2. Ses Oynatma
+- Modern ses oynatıcı arayüzü
+- WhatsApp tarzı dikey çubuk görselleştirme
+- İlerleme çubuğu ve zamanlama
+- Tıklayarak konumlandırma özelliği
+
+### 3. Arayüz
+- Koyu tema
+- Modern, minimalist tasarım
+- Akıcı animasyonlar
+- Duyarlı düzen
 
 ## Technical Details
 
 ### Dependencies
-- `just_audio`: Audio playback
-- `record`: Audio recording
-- `permission_handler`: Platform permissions
-- `path_provider`: File system access
+```yaml
+dependencies:
+  flutter_bloc: ^8.1.4        # Durum yönetimi
+  just_audio: ^0.10.4         # Ses oynatma
+  record: ^6.0.0             # Ses kaydı
+  cached_network_image: ^3.3.1 # Resim önbelleği
+  equatable: ^2.0.5          # Veri karşılaştırma
+  shared_preferences: ^2.2.2  # Yerel depolama
+```
 
 ### Platform Support
 - Android
 - iOS
-- Web (with some limitations)
-
-### Key Components
-
-#### RecordButton
-- Uses `SingleTickerProviderStateMixin` for animations
-- Handles microphone permissions
-- Manages temporary file storage
-- Provides real-time amplitude data
-
-#### AudioWaveVisualizer
-- Custom painting for waveform display
-- Supports both playback and recording visualization
-- Optimized for performance
-
-#### AudioStoryCard
-- Handles audio playback
-- Displays waveform visualization
-- Manages play/pause state
+- Web (bazı sınırlamalarla)
 
 ## Best Practices
 
-### Code Style
-1. Use meaningful variable and function names
-2. Keep functions small and focused
-3. Add comments for complex logic
-4. Use const constructors when possible
-5. Follow Flutter's style guide
+### 1. Kod Stili
+- Anlamlı değişken ve fonksiyon isimleri
+- Küçük ve odaklı fonksiyonlar
+- Karmaşık mantık için yorumlar
+- const yapıcıları kullanımı
+- Flutter stil kılavuzuna uyum
 
-### Performance
-1. Minimize setState() calls
-2. Use const widgets where appropriate
-3. Dispose controllers and subscriptions
-4. Cache computed values
-5. Optimize rebuild cycles
+### 2. Performans
+- setState() çağrılarını minimize etme
+- Uygun yerlerde const widget kullanımı
+- Controller ve subscription temizliği
+- Hesaplanan değerleri önbellekleme
+- Yeniden oluşturma döngülerini optimize etme
 
-### Error Handling
-1. Handle all platform permissions
-2. Provide user feedback for errors
-3. Implement proper file cleanup
-4. Handle edge cases (no storage, no permissions)
+### 3. Hata Yönetimi
+- Platform izinlerini kontrol etme
+- Kullanıcı geri bildirimi sağlama
+- Dosya temizliği
+- Kenar durumlarını ele alma
 
-### Testing
-1. Write widget tests for UI components
-2. Test error scenarios
-3. Verify platform-specific behavior
-4. Test audio handling edge cases
-
-## Common Issues & Solutions
-
-### Web Platform
-1. **Audio Recording**: Use web-specific implementation
-2. **File System**: Handle through browser APIs
-3. **Permissions**: Request through browser dialog
-
-### Mobile Platforms
-1. **Permissions**: Request at runtime
-2. **File Storage**: Use temporary directory
-3. **Background Audio**: Handle lifecycle events
-
-## Future Improvements
-1. Add user authentication
-2. Implement cloud storage
-3. Add social features (likes, comments)
-4. Enhance audio processing
-5. Add offline support
-6. Implement push notifications
+### 4. Test
+- Widget testleri
+- Birim testleri
+- Platform özel davranış testleri
+- Ses işleme kenar durumları
 
 ## Contributing
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Write/update tests
-5. Submit a pull request
+
+1. Projeyi fork edin
+2. Feature branch oluşturun
+3. Değişikliklerinizi yapın
+4. Testleri güncelleyin/yazın
+5. Pull request gönderin
 
 ## Development Setup
-1. Install Flutter SDK
-2. Clone the repository
-3. Run `flutter pub get`
-4. Configure platform-specific settings
-5. Run the app with `flutter run` 
+
+1. Flutter SDK'yı yükleyin
+2. Projeyi klonlayın
+3. Bağımlılıkları yükleyin:
+   ```bash
+   flutter pub get
+   ```
+4. Platform ayarlarını yapılandırın
+5. Uygulamayı çalıştırın:
+   ```bash
+   flutter run
+   ```
+
+## Troubleshooting
+
+### Yaygın Sorunlar ve Çözümleri
+
+1. Ses Kaydı İzinleri
+   ```dart
+   await Permission.microphone.request();
+   ```
+
+2. Ses Oynatma Hataları
+   ```dart
+   try {
+     await player.setUrl(url);
+   } catch (e) {
+     print('Ses yükleme hatası: $e');
+   }
+   ```
+
+3. Önbellek Yönetimi
+   ```dart
+   final cacheDir = await getTemporaryDirectory();
+   await cacheDir.delete(recursive: true);
+   ```
+
+## Future Improvements
+
+1. Kullanıcı Kimlik Doğrulama
+2. Bulut Depolama
+3. Sosyal Özellikler
+4. Ses İşleme Geliştirmeleri
+5. Çevrimdışı Destek
+6. Bildirimler 

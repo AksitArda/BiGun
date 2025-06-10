@@ -2,7 +2,134 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
 import '../models/story.dart';
-import 'audio_wave_visualizer.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
+class AudioWaveVisualizer extends StatelessWidget {
+  final List<double> waveformData;
+  final bool isPlaying;
+  final double progress;
+  final Function(double position)? onSeek;
+
+  const AudioWaveVisualizer({
+    Key? key,
+    required this.waveformData,
+    required this.isPlaying,
+    required this.progress,
+    this.onSeek,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return GestureDetector(
+          onTapDown: (details) {
+            if (onSeek != null) {
+              final tapPosition = details.localPosition.dx;
+              final seekPosition = (tapPosition / constraints.maxWidth).clamp(0.0, 1.0);
+              onSeek!(seekPosition);
+            }
+          },
+          child: Container(
+            height: 40,
+            child: CustomPaint(
+              painter: WaveformPainter(
+                waveformData: waveformData,
+                progress: progress,
+                color: Colors.grey[600]!,
+                progressColor: Colors.green,
+                isPlaying: isPlaying,
+              ),
+              size: Size(constraints.maxWidth, 40),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class WaveformPainter extends CustomPainter {
+  final List<double> waveformData;
+  final double progress;
+  final Color color;
+  final Color progressColor;
+  final bool isPlaying;
+
+  const WaveformPainter({
+    required this.waveformData,
+    required this.progress,
+    required this.color,
+    required this.progressColor,
+    required this.isPlaying,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (waveformData.isEmpty) return;
+
+    final barWidth = 3.0;
+    final spacing = 3.0;
+    final totalBarWidth = barWidth + spacing;
+    final middle = size.height / 2;
+    
+    final maxBars = (size.width / totalBarWidth).floor();
+    final startX = (size.width - (maxBars * totalBarWidth)) / 2;
+
+    // Progress hesaplama
+    final progressWidth = size.width * progress;
+
+    const minHeight = 4.0;
+    const maxHeight = 16.0;
+
+    void drawBar(double x, double amplitude, Color barColor, {bool withGlow = false}) {
+      final height = minHeight + (amplitude * (maxHeight - minHeight));
+      
+      final paint = Paint()
+        ..color = barColor
+        ..style = PaintingStyle.fill;
+
+      if (withGlow) {
+        paint.maskFilter = MaskFilter.blur(BlurStyle.normal, 1);
+      }
+
+      // Üst çubuk
+      final topRect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(x, middle - height, barWidth, height),
+        Radius.circular(barWidth / 2),
+      );
+
+      // Alt çubuk
+      final bottomRect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(x, middle, barWidth, height),
+        Radius.circular(barWidth / 2),
+      );
+
+      canvas.drawRRect(topRect, paint);
+      canvas.drawRRect(bottomRect, paint);
+    }
+
+    // Çubukları çiz
+    for (var i = 0; i < maxBars && i < waveformData.length; i++) {
+      final x = startX + (i * totalBarWidth);
+      final amplitude = waveformData[i].clamp(0.0, 1.0);
+      
+      final isInProgress = x <= progressWidth;
+      final barColor = isInProgress ? progressColor : color;
+      
+      drawBar(x, amplitude, barColor, withGlow: isPlaying && isInProgress);
+    }
+  }
+
+  @override
+  bool shouldRepaint(WaveformPainter oldDelegate) {
+    return oldDelegate.waveformData != waveformData ||
+           oldDelegate.progress != progress ||
+           oldDelegate.color != color ||
+           oldDelegate.progressColor != progressColor ||
+           oldDelegate.isPlaying != isPlaying;
+  }
+}
 
 class AudioStoryCard extends StatefulWidget {
   final Story story;
@@ -21,6 +148,7 @@ class _AudioStoryCardState extends State<AudioStoryCard> {
   bool _isPlaying = false;
   double _playbackProgress = 0.0;
   bool _isDragging = false;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -31,11 +159,10 @@ class _AudioStoryCardState extends State<AudioStoryCard> {
   Future<void> _initPlayer() async {
     _audioPlayer = AudioPlayer();
     
-    // Ses dosyasını yükle
     try {
       await _audioPlayer.setUrl(widget.story.audioUrl);
+      setState(() => _isLoading = false);
       
-      // İlerlemeyi takip et
       _audioPlayer.positionStream.listen((position) {
         if (mounted && !_isDragging) {
           final duration = _audioPlayer.duration ?? Duration.zero;
@@ -47,7 +174,6 @@ class _AudioStoryCardState extends State<AudioStoryCard> {
         }
       });
 
-      // Oynatma durumunu takip et
       _audioPlayer.playerStateStream.listen((state) {
         if (mounted) {
           setState(() {
@@ -57,6 +183,7 @@ class _AudioStoryCardState extends State<AudioStoryCard> {
       });
     } catch (e) {
       print('Ses yükleme hatası: $e');
+      setState(() => _isLoading = false);
     }
   }
 
@@ -74,7 +201,6 @@ class _AudioStoryCardState extends State<AudioStoryCard> {
         
         _isDragging = false;
 
-        // Eğer ses çalmıyorsa otomatik başlat
         if (!_isPlaying) {
           await _audioPlayer.play();
         }
@@ -99,6 +225,13 @@ class _AudioStoryCardState extends State<AudioStoryCard> {
     }
   }
 
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    return '$minutes:$seconds';
+  }
+
   @override
   void dispose() {
     _audioPlayer.dispose();
@@ -108,53 +241,28 @@ class _AudioStoryCardState extends State<AudioStoryCard> {
   @override
   Widget build(BuildContext context) {
     final timeString = DateFormat('HH:mm').format(widget.story.time);
+    final duration = _audioPlayer.duration ?? Duration.zero;
+    final position = duration * _playbackProgress;
 
-    return Container(
+    return Card(
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Color(0xFF2A2A2A),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
+      color: Color(0xFF2A2A2A),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                GestureDetector(
-                  onTap: _togglePlayback,
-                  child: Row(
-                    children: [
-                      Hero(
-                        tag: 'avatar_${widget.story.id}',
-                        child: CircleAvatar(
-                          backgroundImage: NetworkImage(widget.story.avatarUrl),
-                          radius: 20,
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _isPlaying ? Colors.green : Colors.white.withOpacity(0.1),
-                        ),
-                        child: Icon(
-                          _isPlaying ? Icons.pause : Icons.play_arrow,
-                          color: _isPlaying ? Colors.white : Colors.white70,
-                          size: 24,
-                        ),
-                      ),
-                    ],
+                Hero(
+                  tag: 'avatar_${widget.story.id}',
+                  child: CircleAvatar(
+                    radius: 20,
+                    backgroundImage: CachedNetworkImageProvider(widget.story.avatarUrl),
                   ),
                 ),
                 SizedBox(width: 12),
@@ -167,9 +275,45 @@ class _AudioStoryCardState extends State<AudioStoryCard> {
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
-                      SizedBox(height: 8),
+                      Text(
+                        timeString,
+                        style: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Row(
+              children: [
+                _isLoading
+                    ? SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                        ),
+                      )
+                    : IconButton(
+                        icon: Icon(
+                          _isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                          color: Colors.green,
+                          size: 40,
+                        ),
+                        onPressed: _togglePlayback,
+                      ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    children: [
                       if (widget.story.waveformData != null)
                         AudioWaveVisualizer(
                           waveformData: widget.story.waveformData!,
@@ -177,62 +321,33 @@ class _AudioStoryCardState extends State<AudioStoryCard> {
                           progress: _playbackProgress,
                           onSeek: _seekTo,
                         ),
+                      SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _formatDuration(position),
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 12,
+                            ),
+                          ),
+                          Text(
+                            _formatDuration(duration),
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
-                SizedBox(width: 8),
-                Text(
-                  timeString,
-                  style: TextStyle(color: Colors.grey[400]),
-                ),
               ],
             ),
-          ),
-          if (widget.story.comments.isNotEmpty)
-            Container(
-              padding: EdgeInsets.only(left: 68, right: 16, bottom: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: widget.story.comments.map((comment) {
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CircleAvatar(
-                          backgroundImage: NetworkImage(comment.avatarUrl),
-                          radius: 12,
-                        ),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                comment.username,
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              Text(
-                                comment.text,
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
