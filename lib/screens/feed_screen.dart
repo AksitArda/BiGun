@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/story.dart';
 import '../components/audio_story_card.dart';
 import '../components/record_button.dart';
+import 'profile_screen.dart';
 
 class FeedScreen extends StatefulWidget {
   @override
@@ -70,8 +71,7 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF1F1F1F),
-      appBar: AppBar(
+      backgroundColor: Color(0xFF1F1F1F),      appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
@@ -82,6 +82,20 @@ class _FeedScreenState extends State<FeedScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: CircleAvatar(
+              radius: 16,
+              backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=1'),
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ProfileScreen()),
+              );
+            },
+          ),
+        ],
       ),
       body: ListView.builder(
         padding: EdgeInsets.only(bottom: 100),
