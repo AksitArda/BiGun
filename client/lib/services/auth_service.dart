@@ -8,9 +8,28 @@ class AuthService {
   // Android Emulator için 10.0.2.2 kullanın
   // static const String baseUrl = 'http://10.0.2.2:5000/api';
   
+  static const String _tokenKey = 'jwt_token';
   final SharedPreferences _prefs;
 
   AuthService(this._prefs);
+
+  // Token yönetimi
+  String? get token => _prefs.getString(_tokenKey);
+  bool get isAuthenticated => token != null;
+
+  Future<void> _saveToken(String token) async {
+    await _prefs.setString(_tokenKey, token);
+  }
+
+  Future<void> _removeToken() async {
+    await _prefs.remove(_tokenKey);
+  }
+
+  // HTTP Headers
+  Map<String, String> get _headers => {
+    'Content-Type': 'application/json',
+    if (token != null) 'Authorization': 'Bearer $token',
+  };
 
   Future<Map<String, dynamic>> register({
     required String username,
@@ -20,7 +39,7 @@ class AuthService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/register'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _headers,
         body: json.encode({
           'username': username,
           'email': email,
@@ -30,8 +49,11 @@ class AuthService {
 
       final data = json.decode(response.body);
       if (response.statusCode == 201) {
-        // Store the token
-        await _prefs.setString('jwt_token', response.headers['set-cookie'] ?? '');
+        final token = response.headers['authorization']?.split('Bearer ')?.last ??
+                     data['token'];
+        if (token != null) {
+          await _saveToken(token);
+        }
         return data;
       } else {
         throw data['message'] ?? 'Registration failed';
@@ -48,7 +70,7 @@ class AuthService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/login'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _headers,
         body: json.encode({
           'email': email,
           'password': password,
@@ -57,8 +79,11 @@ class AuthService {
 
       final data = json.decode(response.body);
       if (response.statusCode == 200) {
-        // Store the token
-        await _prefs.setString('jwt_token', response.headers['set-cookie'] ?? '');
+        final token = response.headers['authorization']?.split('Bearer ')?.last ??
+                     data['token'];
+        if (token != null) {
+          await _saveToken(token);
+        }
         return data;
       } else {
         throw data['message'] ?? 'Login failed';
@@ -70,19 +95,13 @@ class AuthService {
 
   Future<void> logout() async {
     try {
-      final token = _prefs.getString('jwt_token');
-      if (token == null) return;
-
       final response = await http.post(
         Uri.parse('$baseUrl/auth/logout'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Cookie': token,
-        },
+        headers: _headers,
       );
 
       if (response.statusCode == 200) {
-        await _prefs.remove('jwt_token');
+        await _removeToken();
       } else {
         throw 'Logout failed';
       }
@@ -93,15 +112,11 @@ class AuthService {
 
   Future<Map<String, dynamic>> getCurrentUser() async {
     try {
-      final token = _prefs.getString('jwt_token');
-      if (token == null) throw 'Not authenticated';
+      if (!isAuthenticated) throw 'Not authenticated';
 
       final response = await http.get(
         Uri.parse('$baseUrl/auth/me'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Cookie': token,
-        },
+        headers: _headers,
       );
 
       final data = json.decode(response.body);
@@ -114,6 +129,4 @@ class AuthService {
       throw e.toString();
     }
   }
-
-  bool get isAuthenticated => _prefs.containsKey('jwt_token');
 } 

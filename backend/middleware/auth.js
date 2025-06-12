@@ -3,13 +3,14 @@ const User = require('../models/User');
 
 const auth = async (req, res, next) => {
     try {
-        const token = req.cookies.jwt;
-        
-        if (!token) {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return res.status(401).json({ message: 'Authentication required' });
         }
 
+        const token = authHeader.split(' ')[1];
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+        
         const user = await User.findOne({ 
             _id: decoded.userId,
             sessionToken: token 

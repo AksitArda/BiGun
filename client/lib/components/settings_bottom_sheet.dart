@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:bigun/core/theme/app_theme.dart';
 import 'package:bigun/screens/auth/login_screen.dart';
+import 'package:bigun/providers/auth_provider.dart';
 
 class SettingsBottomSheet extends StatelessWidget {
   @override
@@ -79,12 +81,18 @@ class SettingsBottomSheet extends StatelessWidget {
                       ),
                     ),
                     TextButton(
-                      onPressed: () {
-                        // TODO: Implement logout logic
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(builder: (context) => LoginScreen()),
-                          (route) => false,
-                        );
+                      onPressed: () async {
+                        try {
+                          await context.read<AuthProvider>().logout();
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (context) => LoginScreen()),
+                            (route) => false,
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Çıkış yaparken bir hata oluştu: $e')),
+                          );
+                        }
                       },
                       child: Text(
                         'Çıkış Yap',

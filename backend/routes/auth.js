@@ -23,19 +23,12 @@ router.post('/register', async (req, res) => {
         const token = jwt.sign(
             { userId: user._id },
             process.env.JWT_SECRET || 'your-secret-key',
-            { expiresIn: '7d' }
+            { expiresIn: '30d' }
         );
 
         // Save token as session
         user.sessionToken = token;
         await user.save();
-
-        // Set cookie
-        res.cookie('jwt', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-        });
 
         res.status(201).json({
             message: 'User created successfully',
@@ -43,7 +36,8 @@ router.post('/register', async (req, res) => {
                 id: user._id,
                 username: user.username,
                 email: user.email
-            }
+            },
+            token
         });
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -71,19 +65,12 @@ router.post('/login', async (req, res) => {
         const token = jwt.sign(
             { userId: user._id },
             process.env.JWT_SECRET || 'your-secret-key',
-            { expiresIn: '7d' }
+            { expiresIn: '30d' }
         );
 
         // Save token as session
         user.sessionToken = token;
         await user.save();
-
-        // Set cookie
-        res.cookie('jwt', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-        });
 
         res.json({
             message: 'Logged in successfully',
@@ -91,7 +78,8 @@ router.post('/login', async (req, res) => {
                 id: user._id,
                 username: user.username,
                 email: user.email
-            }
+            },
+            token
         });
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -104,9 +92,6 @@ router.post('/logout', auth, async (req, res) => {
         // Clear session token
         req.user.sessionToken = null;
         await req.user.save();
-
-        // Clear cookie
-        res.clearCookie('jwt');
         
         res.json({ message: 'Logged out successfully' });
     } catch (error) {

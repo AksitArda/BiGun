@@ -69,7 +69,20 @@ class AuthProvider with ChangeNotifier {
     try {
       final response = await _authService.getCurrentUser();
       _user = response['user'];
+      _isAuthenticated = true;
       notifyListeners();
+    } catch (e) {
+      _isAuthenticated = false;
+      notifyListeners();
+    }
+  }
+
+  // Otomatik giriş kontrolü
+  Future<void> checkAuthStatus() async {
+    try {
+      if (_authService.isAuthenticated) {
+        await _loadUser();
+      }
     } catch (e) {
       _isAuthenticated = false;
       notifyListeners();
