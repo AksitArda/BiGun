@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../providers/auth_provider.dart';
 import '../feed_screen.dart';
 import 'register_screen.dart';
 
@@ -26,8 +28,10 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = true);
       
       try {
-        // TODO: implement login logic
-        await Future.delayed(Duration(seconds: 2)); // Simulating API call
+        await context.read<AuthProvider>().login(
+          email: _emailController.text,
+          password: _passwordController.text,
+        );
         
         if (mounted) {
           Navigator.pushReplacement(
@@ -36,9 +40,11 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Giriş yaparken bir hata oluştu: $e')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Giriş yaparken bir hata oluştu: $e')),
+          );
+        }
       } finally {
         if (mounted) {
           setState(() => _isLoading = false);

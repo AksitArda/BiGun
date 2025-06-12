@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../providers/auth_provider.dart';
 import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -27,19 +29,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _isLoading = true);
       
       try {
-        // TODO: implement registration logic
-        await Future.delayed(Duration(seconds: 2)); // Simulating API call
+        await context.read<AuthProvider>().register(
+          username: _usernameController.text,
+          email: _emailController.text,
+          password: _passwordController.text,
+        );
         
         if (mounted) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => LoginScreen()),
           );
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Kayıt başarılı! Lütfen giriş yapın.')),
+          );
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Kayıt olurken bir hata oluştu: $e')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Kayıt olurken bir hata oluştu: $e')),
+          );
+        }
       } finally {
         if (mounted) {
           setState(() => _isLoading = false);
