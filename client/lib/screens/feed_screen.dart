@@ -4,7 +4,6 @@ import '../components/audio_story_card.dart';
 import '../components/record_button.dart';
 import '../core/theme/app_theme.dart';
 import 'profile_screen.dart';
-import 'messages_screen.dart';
 
 class FeedScreen extends StatefulWidget {
   @override
@@ -52,14 +51,12 @@ class _FeedScreenState extends State<FeedScreen> {
   ];
 
   void _handleNewRecording(String path, Duration duration, List<double> waveformData) {
-    // Burada kayıt tamamlandığında yapılacak işlemleri ekleyeceğiz
-    // Örneğin: Kaydı sunucuya yükleme, story listesine ekleme vb.
     print('Yeni kayıt: $path, Süre: $duration');
     
     setState(() {
       stories.insert(0, Story(
         id: DateTime.now().toString(),
-        username: 'Ben', // Gerçek kullanıcı adı buraya gelecek
+        username: 'Ben',
         avatarUrl: 'https://i.pravatar.cc/150?img=5',
         audioUrl: path,
         time: DateTime.now(),
@@ -73,7 +70,8 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF1F1F1F),      appBar: AppBar(
+      backgroundColor: Color(0xFF1F1F1F),
+      appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
@@ -83,39 +81,8 @@ class _FeedScreenState extends State<FeedScreen> {
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
-        ),        actions: [
-          Stack(
-            children: [
-              IconButton(
-                icon: Icon(Icons.message_outlined, color: Colors.white),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => MessagesScreen()),
-                  );
-                },
-              ),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  padding: EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.accentColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    '2', // TODO: Get actual unread count
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+        ),
+        actions: [
           IconButton(
             icon: CircleAvatar(
               radius: 16,

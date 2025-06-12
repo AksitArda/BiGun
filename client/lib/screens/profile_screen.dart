@@ -3,7 +3,6 @@ import 'package:bigun/core/theme/app_theme.dart';
 import 'package:bigun/models/story.dart';
 import 'package:bigun/components/audio_story_card.dart';
 import 'package:bigun/components/settings_bottom_sheet.dart';
-import 'messages_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -11,7 +10,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final List<Story> _userStories = []; // TODO: Fetch user stories
+  final List<Story> _userStories = [];
   bool _isLoading = false;
 
   @override
@@ -23,8 +22,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadUserStories() async {
     setState(() => _isLoading = true);
     try {
-      // TODO: Implement API call to fetch user stories
-      // Simulating API call with dummy data
       await Future.delayed(Duration(seconds: 1));
       if (mounted) {
         setState(() {
@@ -38,7 +35,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               audioDuration: Duration(seconds: 30),
               waveformData: List.generate(50, (i) => 0.5),
             ),
-            // Add more stories as needed
           ]);
         });
       }
@@ -67,18 +63,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.primaryColor,      appBar: AppBar(
+      backgroundColor: AppTheme.primaryColor,
+      appBar: AppBar(
         title: Text('Profil', style: AppTheme.headlineStyle),
         actions: [
-          IconButton(
-            icon: Icon(Icons.message_outlined, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => MessagesScreen()),
-              );
-            },
-          ),
           IconButton(
             icon: Icon(Icons.settings, color: Colors.white),
             onPressed: _showSettingsBottomSheet,

@@ -30,14 +30,6 @@ class SettingsBottomSheet extends StatelessWidget {
             },
           ),
           _buildSettingsTile(
-            icon: Icons.privacy_tip_outlined,
-            title: 'Gizlilik Ayarları',
-            onTap: () {
-              // TODO: Implement privacy settings
-              Navigator.pop(context);
-            },
-          ),
-          _buildSettingsTile(
             icon: Icons.help_outline,
             title: 'Yardım ve Destek',
             onTap: () {
