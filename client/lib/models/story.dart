@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class Story {
   final String id;
@@ -22,11 +23,22 @@ class Story {
   });
 
   factory Story.fromJson(Map<String, dynamic> json) {
+    // Base URL'i platform'a göre ayarla
+    final baseUrl = kIsWeb 
+        ? 'http://localhost:5000' 
+        : 'http://10.0.2.2:5000';
+
+    // Gelen filepath'i düzelt
+    final filepath = json['filepath'] as String;
+    final audioUrl = filepath.startsWith('http') 
+        ? filepath 
+        : '$baseUrl/$filepath';
+
     return Story(
       id: json['_id'],
       username: json['uploadedBy']['username'],
       avatarUrl: 'https://i.pravatar.cc/150?img=1', // Default avatar
-      audioUrl: json['filepath'],
+      audioUrl: audioUrl,
       time: DateTime.parse(json['createdAt']),
       audioDuration: json['duration'] != null 
           ? Duration(milliseconds: json['duration']) 

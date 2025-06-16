@@ -13,12 +13,16 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin: true, // Tüm originlere izin ver
-    credentials: true
+    origin: ['http://localhost:3000', 'http://localhost:5000', 'http://localhost:55739'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    exposedHeaders: ['Content-Disposition']
 }));
 
-// Statik dosya sunumu için
+// Static dosya sunumu için
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 const authRoutes = require('./routes/auth');
@@ -28,7 +32,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/audio', audioRoutes);
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/bigun_db')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/bigun_db', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
     .then(() => console.log('Connected to MongoDB'))
     .catch((err) => console.error('MongoDB connection error:', err));
 
