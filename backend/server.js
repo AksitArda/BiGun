@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
+const path = require('path');
 
 dotenv.config();
 
@@ -16,9 +17,15 @@ app.use(cors({
     credentials: true
 }));
 
+// Statik dosya sunumu için
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Routes
 const authRoutes = require('./routes/auth');
+const audioRoutes = require('./routes/audio');
+
 app.use('/api/auth', authRoutes);
+app.use('/api/audio', audioRoutes);
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/bigun_db')
