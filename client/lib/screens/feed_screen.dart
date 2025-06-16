@@ -1,9 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/story.dart';
 import '../components/audio_story_card.dart';
 import '../components/record_button.dart';
 import '../core/theme/app_theme.dart';
+import '../services/audio_service.dart';
 import 'profile_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FeedScreen extends StatefulWidget {
   @override
@@ -11,60 +15,66 @@ class FeedScreen extends StatefulWidget {
 }
 
 class _FeedScreenState extends State<FeedScreen> {
-  final List<Story> stories = [
-    Story(
-      id: '1',
-      username: 'Ayşe023',
-      avatarUrl: 'https://i.pravatar.cc/150?img=1',
-      audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-      time: DateTime.now().subtract(Duration(minutes: 10)),
-      audioDuration: Duration(seconds: 15),
-      comments: [
-        Comment(
-          id: '1',
-          username: 'Mehmet',
-          avatarUrl: 'https://i.pravatar.cc/150?img=2',
-          text: 'Bu tarz şeyleri çok düşünme asdlkjah',
-          time: DateTime.now().subtract(Duration(minutes: 5)),
-        ),
-      ],
-      waveformData: List.generate(50, (i) => 0.1 + (0.8 * i % 10) / 10),
-    ),
-    Story(
-      id: '2',
-      username: 'Atilla0',
-      avatarUrl: 'https://i.pravatar.cc/150?img=3',
-      audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-      time: DateTime.now().subtract(Duration(minutes: 30)),
-      audioDuration: Duration(seconds: 20),
-      comments: [
-        Comment(
-          id: '2',
-          username: 'Can',
-          avatarUrl: 'https://i.pravatar.cc/150?img=4',
-          text: 'Antalyalı mısın kankaa?',
-          time: DateTime.now().subtract(Duration(minutes: 15)),
-        ),
-      ],
-      waveformData: List.generate(50, (i) => 0.1 + (0.8 * (50 - i) % 10) / 10),
-    ),
-  ];
+  late AudioService _audioService;
+  List<Story> stories = [];
+  bool _isLoading = true;
 
-  void _handleNewRecording(String path, Duration duration, List<double> waveformData) {
-    print('Yeni kayıt: $path, Süre: $duration');
+  @override
+  void initState() {
+    super.initState();
+    _initAudioService();
+  }
+
+  Future<void> _initAudioService() async {
+    final prefs = await SharedPreferences.getInstance();
+    _audioService = AudioService(prefs);
+    _loadFeed();
+  }
+
+  Future<void> _loadFeed() async {
+    if (!mounted) return;
     
-    setState(() {
-      stories.insert(0, Story(
-        id: DateTime.now().toString(),
-        username: 'Ben',
-        avatarUrl: 'https://i.pravatar.cc/150?img=5',
-        audioUrl: path,
-        time: DateTime.now(),
-        audioDuration: duration,
-        comments: [],
+    setState(() => _isLoading = true);
+    
+    try {
+      final feedStories = await _audioService.getFeed();
+      if (mounted) {
+        setState(() {
+          stories = feedStories;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Feed yüklenirken bir hata oluştu: $e')),
+        );
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _handleNewRecording(String path, Duration duration, List<double> waveformData) async {
+    try {
+      final story = await _audioService.uploadAudio(
+        title: 'Yeni Ses Kaydı',
+        audioPath: path,
+        duration: duration,
         waveformData: waveformData,
-      ));
-    });
+      );
+      
+      if (mounted) {
+        setState(() {
+          stories.insert(0, story);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ses yüklenirken bir hata oluştu: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -97,12 +107,28 @@ class _FeedScreenState extends State<FeedScreen> {
           ),
         ],
       ),
-      body: ListView.builder(
-        padding: EdgeInsets.only(bottom: 100),
-        itemCount: stories.length,
-        itemBuilder: (context, index) {
-          return AudioStoryCard(story: stories[index]);
-        },
+      body: RefreshIndicator(
+        onRefresh: _loadFeed,
+        child: _isLoading
+          ? Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.accentColor),
+              ),
+            )
+          : stories.isEmpty
+            ? Center(
+                child: Text(
+                  'Henüz hiç ses kaydı yok',
+                  style: TextStyle(color: Colors.white70),
+                ),
+              )
+            : ListView.builder(
+                padding: EdgeInsets.only(bottom: 100),
+                itemCount: stories.length,
+                itemBuilder: (context, index) {
+                  return AudioStoryCard(story: stories[index]);
+                },
+              ),
       ),
       floatingActionButton: RecordButton(
         onRecordingComplete: _handleNewRecording,

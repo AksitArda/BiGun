@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bigun/core/theme/app_theme.dart';
 import 'package:bigun/models/story.dart';
 import 'package:bigun/components/audio_story_card.dart';
 import 'package:bigun/components/settings_bottom_sheet.dart';
+import 'package:bigun/services/audio_service.dart';
+import 'package:bigun/providers/auth_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -10,40 +14,42 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final List<Story> _userStories = [];
-  bool _isLoading = false;
+  late AudioService _audioService;
+  List<Story> _userStories = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _initAudioService();
+  }
+
+  Future<void> _initAudioService() async {
+    final prefs = await SharedPreferences.getInstance();
+    _audioService = AudioService(prefs);
     _loadUserStories();
   }
 
   Future<void> _loadUserStories() async {
+    if (!mounted) return;
+    
     setState(() => _isLoading = true);
+    
     try {
-      await Future.delayed(Duration(seconds: 1));
+      final stories = await _audioService.getFeed(); // TODO: Kullanıcının kendi hikayelerini getiren endpoint eklenecek
       if (mounted) {
         setState(() {
-          _userStories.addAll([
-            Story(
-              id: '1',
-              username: 'CurrentUser',
-              avatarUrl: 'https://i.pravatar.cc/150?img=1',
-              audioUrl: 'https://example.com/audio1.mp3',
-              time: DateTime.now().subtract(Duration(hours: 2)),
-              audioDuration: Duration(seconds: 30),
-              waveformData: List.generate(50, (i) => 0.5),
-            ),
-          ]);
+          _userStories = stories.where((story) => 
+            story.username == context.read<AuthProvider>().user?['username']
+          ).toList();
+          _isLoading = false;
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Hikayeler yüklenirken bir hata oluştu')),
-      );
-    } finally {
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hikayeler yüklenirken bir hata oluştu: $e')),
+        );
         setState(() => _isLoading = false);
       }
     }
@@ -62,6 +68,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthProvider>().user;
+    
     return Scaffold(
       backgroundColor: AppTheme.primaryColor,
       appBar: AppBar(
@@ -79,7 +87,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
-              child: _buildProfileHeader(),
+              child: _buildProfileHeader(user),
             ),
             SliverToBoxAdapter(
               child: Padding(
@@ -121,7 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildProfileHeader() {
+  Widget _buildProfileHeader(Map<String, dynamic>? user) {
     return Container(
       padding: EdgeInsets.all(24),
       child: Column(
@@ -149,12 +157,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           SizedBox(height: 16),
           Text(
-            'Kullanıcı Adı',
+            user?['username'] ?? 'Kullanıcı Adı',
             style: AppTheme.headlineStyle,
           ),
           SizedBox(height: 8),
           Text(
-            'user@email.com',
+            user?['email'] ?? 'user@email.com',
             style: AppTheme.bodyStyle,
           ),
           SizedBox(height: 24),
@@ -162,8 +170,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildStatColumn('Hikayeler', '${_userStories.length}'),
-              _buildStatColumn('Takipçiler', '150'),
-              _buildStatColumn('Takip', '120'),
+              _buildStatColumn('Takipçiler', '0'),
+              _buildStatColumn('Takip', '0'),
             ],
           ),
         ],
