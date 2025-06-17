@@ -192,6 +192,15 @@ class _AudioStoryCardState extends State<AudioStoryCard> {
           setState(() {
             _isPlaying = state.playing;
           });
+          
+          // Ses bittiğinde otomatik olarak başa sar ve durdur
+          if (state.processingState == ProcessingState.completed) {
+            _audioPlayer.seek(Duration.zero);
+            _audioPlayer.pause();
+            setState(() {
+              _playbackProgress = 0.0;
+            });
+          }
         }
       });
     } catch (e) {
