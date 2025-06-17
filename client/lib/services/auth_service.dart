@@ -1,6 +1,5 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/services/api_service.dart';
 
 class AuthService {
   // Web için localhost
@@ -10,8 +9,11 @@ class AuthService {
   
   static const String _tokenKey = 'jwt_token';
   final SharedPreferences _prefs;
+  final ApiService _api;
 
-  AuthService(this._prefs);
+  AuthService(this._prefs) : _api = ApiService() {
+    _api.initialize(_prefs);
+  }
 
   // Token yönetimi
   String? get token => _prefs.getString(_tokenKey);
@@ -37,27 +39,17 @@ class AuthService {
     required String password,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/register'),
-        headers: _headers,
-        body: json.encode({
-          'username': username,
-          'email': email,
-          'password': password,
-        }),
-      );
+      final response = await _api.post('auth/register', body: {
+        'username': username,
+        'email': email,
+        'password': password,
+      });
 
-      final data = json.decode(response.body);
-      if (response.statusCode == 201) {
-        final token = response.headers['authorization']?.split('Bearer ')?.last ??
-                     data['token'];
-        if (token != null) {
-          await _saveToken(token);
-        }
-        return data;
-      } else {
-        throw data['message'] ?? 'Registration failed';
+      final token = response['token'];
+      if (token != null) {
+        await _saveToken(token);
       }
+      return response;
     } catch (e) {
       throw e.toString();
     }
@@ -68,26 +60,16 @@ class AuthService {
     required String password,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/login'),
-        headers: _headers,
-        body: json.encode({
-          'email': email,
-          'password': password,
-        }),
-      );
+      final response = await _api.post('auth/login', body: {
+        'email': email,
+        'password': password,
+      });
 
-      final data = json.decode(response.body);
-      if (response.statusCode == 200) {
-        final token = response.headers['authorization']?.split('Bearer ')?.last ??
-                     data['token'];
-        if (token != null) {
-          await _saveToken(token);
-        }
-        return data;
-      } else {
-        throw data['message'] ?? 'Login failed';
+      final token = response['token'];
+      if (token != null) {
+        await _saveToken(token);
       }
+      return response;
     } catch (e) {
       throw e.toString();
     }
@@ -95,16 +77,8 @@ class AuthService {
 
   Future<void> logout() async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/logout'),
-        headers: _headers,
-      );
-
-      if (response.statusCode == 200) {
-        await _removeToken();
-      } else {
-        throw 'Logout failed';
-      }
+      await _api.post('auth/logout');
+      await _removeToken();
     } catch (e) {
       throw e.toString();
     }
@@ -113,18 +87,7 @@ class AuthService {
   Future<Map<String, dynamic>> getCurrentUser() async {
     try {
       if (!isAuthenticated) throw 'Not authenticated';
-
-      final response = await http.get(
-        Uri.parse('$baseUrl/auth/me'),
-        headers: _headers,
-      );
-
-      final data = json.decode(response.body);
-      if (response.statusCode == 200) {
-        return data;
-      } else {
-        throw data['message'] ?? 'Failed to get user data';
-      }
+      return await _api.get('auth/me');
     } catch (e) {
       throw e.toString();
     }

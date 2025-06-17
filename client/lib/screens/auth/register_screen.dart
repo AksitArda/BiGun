@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/custom_text_field.dart';
 import '../../providers/auth_provider.dart';
 import 'login_screen.dart';
 
@@ -81,30 +82,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 48),
-                  TextFormField(
+                  CustomTextField(
                     controller: _usernameController,
-                    style: TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: 'Kullanıcı Adı',
-                      labelStyle: TextStyle(color: Colors.white70),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.white24),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppTheme.accentColor),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.red),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.red),
-                      ),
-                      prefixIcon: Icon(Icons.person_outline, color: Colors.white70),
-                    ),
+                    labelText: 'Kullanıcı Adı',
+                    prefixIcon: Icons.person_outline,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Lütfen kullanıcı adınızı girin';
@@ -113,72 +94,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     },
                   ),
                   SizedBox(height: 16),
-                  TextFormField(
+                  CustomTextField(
                     controller: _emailController,
-                    style: TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: 'E-posta',
-                      labelStyle: TextStyle(color: Colors.white70),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.white24),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppTheme.accentColor),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.red),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.red),
-                      ),
-                      prefixIcon: Icon(Icons.email_outlined, color: Colors.white70),
-                    ),
+                    labelText: 'E-posta',
+                    prefixIcon: Icons.email_outlined,
+                    keyboardType: TextInputType.emailAddress,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Lütfen e-posta adresinizi girin';
-                      }
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                        return 'Geçerli bir e-posta adresi girin';
                       }
                       return null;
                     },
                   ),
                   SizedBox(height: 16),
-                  TextFormField(
+                  CustomTextField(
                     controller: _passwordController,
-                    style: TextStyle(color: Colors.white),
+                    labelText: 'Şifre',
+                    prefixIcon: Icons.lock_outline,
                     obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: 'Şifre',
-                      labelStyle: TextStyle(color: Colors.white70),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.white24),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppTheme.accentColor),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.red),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.red),
-                      ),
-                      prefixIcon: Icon(Icons.lock_outline, color: Colors.white70),
-                    ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Lütfen şifrenizi girin';
-                      }
-                      if (value.length < 6) {
-                        return 'Şifreniz en az 6 karakter olmalıdır';
                       }
                       return null;
                     },
@@ -194,34 +130,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     child: _isLoading
-                        ? SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
+                        ? CircularProgressIndicator(color: Colors.white)
                         : Text(
                             'Kayıt Ol',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
                             ),
                           ),
                   ),
                   SizedBox(height: 16),
                   TextButton(
                     onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => LoginScreen()),
-                      );
+                      Navigator.pop(context);
                     },
                     child: Text(
                       'Zaten hesabın var mı? Giriş yap',
-                      style: TextStyle(color: AppTheme.accentColor),
+                      style: TextStyle(color: Colors.white70),
                     ),
                   ),
                 ],

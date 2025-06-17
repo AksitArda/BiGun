@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/custom_text_field.dart';
 import '../../providers/auth_provider.dart';
 import '../feed_screen.dart';
 import 'register_screen.dart';
@@ -76,30 +77,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 48),
-                  TextFormField(
+                  CustomTextField(
                     controller: _emailController,
-                    style: TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: 'E-posta',
-                      labelStyle: TextStyle(color: Colors.white70),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.white24),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppTheme.accentColor),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.red),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.red),
-                      ),
-                      prefixIcon: Icon(Icons.email_outlined, color: Colors.white70),
-                    ),
+                    labelText: 'E-posta',
+                    prefixIcon: Icons.email_outlined,
+                    keyboardType: TextInputType.emailAddress,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Lütfen e-posta adresinizi girin';
@@ -111,31 +93,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                   ),
                   SizedBox(height: 16),
-                  TextFormField(
+                  CustomTextField(
                     controller: _passwordController,
-                    style: TextStyle(color: Colors.white),
+                    labelText: 'Şifre',
+                    prefixIcon: Icons.lock_outline,
                     obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: 'Şifre',
-                      labelStyle: TextStyle(color: Colors.white70),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.white24),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppTheme.accentColor),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.red),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.red),
-                      ),
-                      prefixIcon: Icon(Icons.lock_outline, color: Colors.white70),
-                    ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Lütfen şifrenizi girin';
@@ -154,34 +116,26 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     child: _isLoading
-                        ? SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
+                        ? CircularProgressIndicator(color: Colors.white)
                         : Text(
                             'Giriş Yap',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
                             ),
                           ),
                   ),
                   SizedBox(height: 16),
                   TextButton(
                     onPressed: () {
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => RegisterScreen()),
                       );
                     },
                     child: Text(
                       'Hesabın yok mu? Kayıt ol',
-                      style: TextStyle(color: AppTheme.accentColor),
+                      style: TextStyle(color: Colors.white70),
                     ),
                   ),
                 ],
