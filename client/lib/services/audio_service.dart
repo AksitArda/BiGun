@@ -65,8 +65,9 @@ class AudioService {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((json) => Story.fromJson(json)).toList();
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        final List<dynamic> audios = responseData['audios'];
+        return audios.map((json) => Story.fromJson(json)).toList();
       } else {
         final error = json.decode(response.body);
         throw error['message'] ?? 'Failed to load feed';

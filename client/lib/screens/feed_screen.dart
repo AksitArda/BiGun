@@ -64,9 +64,10 @@ class _FeedScreenState extends State<FeedScreen> {
       );
       
       if (mounted) {
-        setState(() {
-          stories.insert(0, story);
-        });
+        await _loadFeed();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ses başarıyla yüklendi')),
+        );
       }
     } catch (e) {
       if (mounted) {

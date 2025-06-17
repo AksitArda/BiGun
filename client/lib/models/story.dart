@@ -29,17 +29,21 @@ class Story {
         : 'http://10.0.2.2:5000';
 
     // Gelen filepath'i düzelt
-    final filepath = json['filepath'] as String;
-    final audioUrl = filepath.startsWith('http') 
-        ? filepath 
+    final filepath = json['filepath'];
+    if (filepath == null) {
+      throw Exception('Audio file path is missing');
+    }
+
+    final audioUrl = filepath.toString().startsWith('http') 
+        ? filepath.toString()
         : '$baseUrl/$filepath';
 
     return Story(
-      id: json['_id'],
-      username: json['uploadedBy']['username'],
+      id: json['_id'] ?? '',
+      username: json['uploadedBy']?['username'] ?? 'Unknown User',
       avatarUrl: 'https://i.pravatar.cc/150?img=1', // Default avatar
       audioUrl: audioUrl,
-      time: DateTime.parse(json['createdAt']),
+      time: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
       audioDuration: json['duration'] != null 
           ? Duration(milliseconds: json['duration']) 
           : const Duration(seconds: 30),

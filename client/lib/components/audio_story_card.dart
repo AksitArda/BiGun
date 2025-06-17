@@ -31,21 +31,54 @@ class AudioWaveVisualizer extends StatelessWidget {
             }
           },
           child: Container(
-            height: 40,
+            height: 48,
             child: CustomPaint(
               painter: WaveformPainter(
-                waveformData: waveformData,
+                waveformData: _processWaveformData(waveformData, constraints.maxWidth),
                 progress: progress,
                 color: Colors.grey[600]!,
                 progressColor: Colors.green,
                 isPlaying: isPlaying,
               ),
-              size: Size(constraints.maxWidth, 40),
+              size: Size(constraints.maxWidth, 48),
             ),
           ),
         );
       },
     );
+  }
+
+  List<double> _processWaveformData(List<double> originalData, double width) {
+    if (originalData.isEmpty) return List.filled(50, 0.5);
+    
+    // Ekran genişliğine göre nokta sayısını ayarla
+    int targetPoints = (width / 3).floor(); // Her 3 piksel için 1 nokta
+    targetPoints = targetPoints.clamp(50, 200); // Min 50, max 200 nokta
+    
+    if (originalData.length == targetPoints) return originalData;
+    
+    List<double> processedData = [];
+    double step = originalData.length / targetPoints;
+    
+    for (int i = 0; i < targetPoints; i++) {
+      int startIdx = (i * step).floor();
+      int endIdx = ((i + 1) * step).floor();
+      endIdx = endIdx.clamp(0, originalData.length);
+      
+      if (startIdx >= endIdx) {
+        processedData.add(originalData[startIdx]);
+        continue;
+      }
+      
+      // Bu aralıktaki değerlerin ortalamasını al
+      double sum = 0;
+      for (int j = startIdx; j < endIdx; j++) {
+        sum += originalData[j];
+      }
+      processedData.add(sum / (endIdx - startIdx));
+    }
+    
+    return processedData;
   }
 }
 
@@ -68,66 +101,46 @@ class WaveformPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (waveformData.isEmpty) return;
 
-    final barWidth = 3.0;
-    final spacing = 3.0;
-    final totalBarWidth = barWidth + spacing;
-    final middle = size.height / 2;
+    final barWidth = size.width / waveformData.length;
+    final spacing = barWidth * 0.2; // Çubuklar arası boşluk
+    final drawWidth = barWidth - spacing;
     
-    final maxBars = (size.width / totalBarWidth).floor();
-    final startX = (size.width - (maxBars * totalBarWidth)) / 2;
-
-    // Progress hesaplama
+    final centerY = size.height / 2;
+    final maxBarHeight = size.height * 0.8; // Maksimum çubuk yüksekliği
+    
     final progressWidth = size.width * progress;
-
-    const minHeight = 4.0;
-    const maxHeight = 16.0;
-
-    void drawBar(double x, double amplitude, Color barColor, {bool withGlow = false}) {
-      final height = minHeight + (amplitude * (maxHeight - minHeight));
-      
-      final paint = Paint()
-        ..color = barColor
-        ..style = PaintingStyle.fill;
-
-      if (withGlow) {
-        paint.maskFilter = MaskFilter.blur(BlurStyle.normal, 1);
-      }
-
-      // Üst çubuk
-      final topRect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(x, middle - height, barWidth, height),
-        Radius.circular(barWidth / 2),
-      );
-
-      // Alt çubuk
-      final bottomRect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(x, middle, barWidth, height),
-        Radius.circular(barWidth / 2),
-      );
-
-      canvas.drawRRect(topRect, paint);
-      canvas.drawRRect(bottomRect, paint);
-    }
-
-    // Çubukları çiz
-    for (var i = 0; i < maxBars && i < waveformData.length; i++) {
-      final x = startX + (i * totalBarWidth);
+    
+    for (int i = 0; i < waveformData.length; i++) {
+      final x = i * barWidth;
       final amplitude = waveformData[i].clamp(0.0, 1.0);
       
-      final isInProgress = x <= progressWidth;
-      final barColor = isInProgress ? progressColor : color;
+      // Çubuk yüksekliğini hesapla
+      final barHeight = maxBarHeight * amplitude;
+      final halfBarHeight = barHeight / 2;
       
-      drawBar(x, amplitude, barColor, withGlow: isPlaying && isInProgress);
+      // Çubuğun başlangıç ve bitiş noktaları
+      final top = centerY - halfBarHeight;
+      final bottom = centerY + halfBarHeight;
+      
+      final paint = Paint()
+        ..color = x <= progressWidth ? progressColor : color
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = drawWidth;
+      
+      // Yuvarlak köşeli çubuk çiz
+      canvas.drawLine(
+        Offset(x + drawWidth / 2, top),
+        Offset(x + drawWidth / 2, bottom),
+        paint,
+      );
     }
   }
 
   @override
   bool shouldRepaint(WaveformPainter oldDelegate) {
-    return oldDelegate.waveformData != waveformData ||
-           oldDelegate.progress != progress ||
-           oldDelegate.color != color ||
-           oldDelegate.progressColor != progressColor ||
-           oldDelegate.isPlaying != isPlaying;
+    return oldDelegate.progress != progress ||
+           oldDelegate.isPlaying != isPlaying ||
+           oldDelegate.waveformData != waveformData;
   }
 }
 
