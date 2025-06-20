@@ -1,7 +1,6 @@
 # Bi Gün ✍️🎧
 
-![BiGun](https://github.com/user-attachments/assets/928744ec-b25b-43d4-bf2d-3f00d601003b)
-
+<img src="https://github.com/user-attachments/assets/928744ec-b25b-43d4-bf2d-3f00d601003b" width="300" />
 
 “Bi Gün”, Instagram hikayelerine benzer bir sosyal medya uygulamasıdır. Ancak kullanıcılar yalnızca ses kaydı paylaşabilir. Uygulamanın ana akış (feed) sayfasında, insanların günlük olarak paylaştığı sesleri dinleyebilirsiniz. Paylaşılan içerikler 24 saat sonra otomatik olarak silinir.
 
