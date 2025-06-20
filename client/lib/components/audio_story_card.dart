@@ -26,7 +26,8 @@ class AudioWaveVisualizer extends StatelessWidget {
           onTapDown: (details) {
             if (onSeek != null) {
               final tapPosition = details.localPosition.dx;
-              final seekPosition = (tapPosition / constraints.maxWidth).clamp(0.0, 1.0);
+              final seekPosition =
+                  (tapPosition / constraints.maxWidth).clamp(0.0, 1.0);
               onSeek!(seekPosition);
             }
           },
@@ -34,7 +35,8 @@ class AudioWaveVisualizer extends StatelessWidget {
             height: 48,
             child: CustomPaint(
               painter: WaveformPainter(
-                waveformData: _processWaveformData(waveformData, constraints.maxWidth),
+                waveformData:
+                    _processWaveformData(waveformData, constraints.maxWidth),
                 progress: progress,
                 color: Colors.grey[600]!,
                 progressColor: Colors.green,
@@ -50,26 +52,26 @@ class AudioWaveVisualizer extends StatelessWidget {
 
   List<double> _processWaveformData(List<double> originalData, double width) {
     if (originalData.isEmpty) return List.filled(50, 0.5);
-    
+
     // Ekran genişliğine göre nokta sayısını ayarla
     int targetPoints = (width / 3).floor(); // Her 3 piksel için 1 nokta
     targetPoints = targetPoints.clamp(50, 200); // Min 50, max 200 nokta
-    
+
     if (originalData.length == targetPoints) return originalData;
-    
+
     List<double> processedData = [];
     double step = originalData.length / targetPoints;
-    
+
     for (int i = 0; i < targetPoints; i++) {
       int startIdx = (i * step).floor();
       int endIdx = ((i + 1) * step).floor();
       endIdx = endIdx.clamp(0, originalData.length);
-      
+
       if (startIdx >= endIdx) {
         processedData.add(originalData[startIdx]);
         continue;
       }
-      
+
       // Bu aralıktaki değerlerin ortalamasını al
       double sum = 0;
       for (int j = startIdx; j < endIdx; j++) {
@@ -77,7 +79,7 @@ class AudioWaveVisualizer extends StatelessWidget {
       }
       processedData.add(sum / (endIdx - startIdx));
     }
-    
+
     return processedData;
   }
 }
@@ -104,29 +106,29 @@ class WaveformPainter extends CustomPainter {
     final barWidth = size.width / waveformData.length;
     final spacing = barWidth * 0.2; // Çubuklar arası boşluk
     final drawWidth = barWidth - spacing;
-    
+
     final centerY = size.height / 2;
     final maxBarHeight = size.height * 0.8; // Maksimum çubuk yüksekliği
-    
+
     final progressWidth = size.width * progress;
-    
+
     for (int i = 0; i < waveformData.length; i++) {
       final x = i * barWidth;
       final amplitude = waveformData[i].clamp(0.0, 1.0);
-      
+
       // Çubuk yüksekliğini hesapla
       final barHeight = maxBarHeight * amplitude;
       final halfBarHeight = barHeight / 2;
-      
+
       // Çubuğun başlangıç ve bitiş noktaları
       final top = centerY - halfBarHeight;
       final bottom = centerY + halfBarHeight;
-      
+
       final paint = Paint()
         ..color = x <= progressWidth ? progressColor : color
         ..strokeCap = StrokeCap.round
         ..strokeWidth = drawWidth;
-      
+
       // Yuvarlak köşeli çubuk çiz
       canvas.drawLine(
         Offset(x + drawWidth / 2, top),
@@ -139,8 +141,8 @@ class WaveformPainter extends CustomPainter {
   @override
   bool shouldRepaint(WaveformPainter oldDelegate) {
     return oldDelegate.progress != progress ||
-           oldDelegate.isPlaying != isPlaying ||
-           oldDelegate.waveformData != waveformData;
+        oldDelegate.isPlaying != isPlaying ||
+        oldDelegate.waveformData != waveformData;
   }
 }
 
@@ -171,11 +173,11 @@ class _AudioStoryCardState extends State<AudioStoryCard> {
 
   Future<void> _initPlayer() async {
     _audioPlayer = AudioPlayer();
-    
+
     try {
       await _audioPlayer.setUrl(widget.story.audioUrl);
       setState(() => _isLoading = false);
-      
+
       _audioPlayer.positionStream.listen((position) {
         if (mounted && !_isDragging) {
           final duration = _audioPlayer.duration ?? Duration.zero;
@@ -192,7 +194,7 @@ class _AudioStoryCardState extends State<AudioStoryCard> {
           setState(() {
             _isPlaying = state.playing;
           });
-          
+
           // Ses bittiğinde otomatik olarak başa sar ve durdur
           if (state.processingState == ProcessingState.completed) {
             _audioPlayer.seek(Duration.zero);
@@ -217,10 +219,10 @@ class _AudioStoryCardState extends State<AudioStoryCard> {
         setState(() {
           _playbackProgress = position;
         });
-        
+
         final seekPosition = duration * position;
         await _audioPlayer.seek(seekPosition);
-        
+
         _isDragging = false;
 
         if (!_isPlaying) {
@@ -284,7 +286,8 @@ class _AudioStoryCardState extends State<AudioStoryCard> {
                   tag: 'avatar_${widget.story.id}',
                   child: CircleAvatar(
                     radius: 20,
-                    backgroundImage: CachedNetworkImageProvider(widget.story.avatarUrl),
+                    backgroundImage:
+                        CachedNetworkImageProvider(widget.story.avatarUrl),
                   ),
                 ),
                 SizedBox(width: 12),
@@ -321,12 +324,15 @@ class _AudioStoryCardState extends State<AudioStoryCard> {
                         height: 40,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.green),
                         ),
                       )
                     : IconButton(
                         icon: Icon(
-                          _isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                          _isPlaying
+                              ? Icons.pause_circle_filled
+                              : Icons.play_circle_filled,
                           color: Colors.green,
                           size: 40,
                         ),
@@ -373,4 +379,4 @@ class _AudioStoryCardState extends State<AudioStoryCard> {
       ),
     );
   }
-} 
+}

@@ -21,12 +21,12 @@ class AudioUploadWeb implements AudioUploadPlatform {
         audioPath,
         responseType: 'arraybuffer',
       );
-      
+
       final buffer = response.response as ByteBuffer;
       final Uint8List audioData = buffer.asUint8List();
       final blob = html.Blob([audioData], 'audio/mpeg');
       final formData = html.FormData();
-      
+
       // FormData'ya dosyayı ekle
       formData.appendBlob('audio', blob, 'audio.mp3');
       formData.append('title', title);
@@ -35,7 +35,7 @@ class AudioUploadWeb implements AudioUploadPlatform {
 
       final request = html.HttpRequest();
       final completer = Completer<Story>();
-      
+
       request.open('POST', '$baseUrl/audio/upload');
       if (token != null) {
         request.setRequestHeader('Authorization', 'Bearer $token');
@@ -61,4 +61,4 @@ class AudioUploadWeb implements AudioUploadPlatform {
       throw e.toString();
     }
   }
-} 
+}

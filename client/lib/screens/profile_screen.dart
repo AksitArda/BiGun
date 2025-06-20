@@ -7,6 +7,9 @@ import 'package:bigun/components/audio_story_card.dart';
 import 'package:bigun/components/settings_bottom_sheet.dart';
 import 'package:bigun/services/audio_service.dart';
 import 'package:bigun/providers/auth_provider.dart';
+import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -32,16 +35,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadUserStories() async {
     if (!mounted) return;
-    
+
     setState(() => _isLoading = true);
-    
+
     try {
-      final stories = await _audioService.getFeed(); // TODO: Kullanıcının kendi hikayelerini getiren endpoint eklenecek
+      final stories = await _audioService.getFeed();
       if (mounted) {
         setState(() {
-          _userStories = stories.where((story) => 
-            story.username == context.read<AuthProvider>().user?['username']
-          ).toList();
+          _userStories = stories
+              .where((story) =>
+                  story.username ==
+                  context.read<AuthProvider>().user?['username'])
+              .toList();
           _isLoading = false;
         });
       }
@@ -52,6 +57,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<void> _uploadProfilePhoto() async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+      if (pickedFile == null) return;
+
+      final _prefs = await SharedPreferences.getInstance();
+      final token = _prefs.getString('jwt_token');
+      final uri = Uri.parse('http://localhost:5000/api/auth/upload-pp');
+
+      final request = http.MultipartRequest('POST', uri)
+        ..headers['Authorization'] = 'Bearer $token'
+        ..files.add(await http.MultipartFile.fromPath(
+          'profileImage',
+          pickedFile.path,
+          filename: pickedFile.path.split('/').last,
+        ));
+
+      final response = await request.send();
+
+      if (response.statusCode == 200) {
+        // Fotoğraf başarıyla yüklendi, şimdi kullanıcıyı güncelle
+        await context.read<AuthProvider>().checkAuthStatus();
+
+        setState(() {}); // Profil fotoğrafını güncelle
+      } else {
+        throw Exception('Fotoğraf yükleme başarısız');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Fotoğraf yüklenemedi: $e')),
+      );
     }
   }
 
@@ -69,7 +110,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
-    
+
     return Scaffold(
       backgroundColor: AppTheme.primaryColor,
       appBar: AppBar(
@@ -93,7 +134,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Padding(
                 padding: EdgeInsets.all(16),
                 child: Text(
-                  'Hikayelerim',
+                  'Paylaşımlarım',
                   style: AppTheme.headlineStyle.copyWith(fontSize: 20),
                 ),
               ),
@@ -102,7 +143,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ? SliverFillRemaining(
                     child: Center(
                       child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.accentColor),
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(AppTheme.accentColor),
                       ),
                     ),
                   )
@@ -139,7 +181,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               CircleAvatar(
                 radius: 50,
-                backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=1'),
+                backgroundImage: NetworkImage(
+                  user?['profileImageUrl'] ??
+                      'https://ui-avatars.com/api/?name=${user?['username'] ?? 'User'}&background=dddddd&color=333333&rounded=true',
+                ),
               ),
               Container(
                 decoration: BoxDecoration(
@@ -148,9 +193,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: IconButton(
                   icon: Icon(Icons.edit, color: Colors.white, size: 20),
-                  onPressed: () {
-                    // TODO: Implement profile photo edit
-                  },
+                  onPressed: _uploadProfilePhoto,
                 ),
               ),
             ],
