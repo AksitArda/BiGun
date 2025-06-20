@@ -5,7 +5,7 @@ import 'dart:convert';
 import '../../models/story.dart';
 import 'audio_upload_interface.dart';
 
-class AudioUploadMobile implements AudioUploadPlatform {
+class AudioUpload implements AudioUploadPlatform {
   @override
   Future<Story> uploadAudio({
     required String baseUrl,
@@ -18,11 +18,11 @@ class AudioUploadMobile implements AudioUploadPlatform {
     try {
       final url = Uri.parse('$baseUrl/audio/upload');
       final request = http.MultipartRequest('POST', url);
-      
+
       if (token != null) {
         request.headers['Authorization'] = 'Bearer $token';
       }
-      
+
       request.fields['title'] = title;
       request.fields['duration'] = duration.inMilliseconds.toString();
       request.fields['waveformData'] = jsonEncode(waveformData);
@@ -39,7 +39,7 @@ class AudioUploadMobile implements AudioUploadPlatform {
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
-      
+
       if (response.statusCode == 201) {
         final data = json.decode(response.body);
         return Story.fromJson(data);
@@ -52,4 +52,4 @@ class AudioUploadMobile implements AudioUploadPlatform {
       throw e.toString();
     }
   }
-} 
+}

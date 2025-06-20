@@ -5,7 +5,7 @@ import 'dart:typed_data';
 import '../../models/story.dart';
 import 'audio_upload_interface.dart';
 
-class AudioUploadWeb implements AudioUploadPlatform {
+class AudioUpload implements AudioUploadPlatform {
   @override
   Future<Story> uploadAudio({
     required String baseUrl,

@@ -5,8 +5,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../models/story.dart';
 import 'platform/audio_upload_interface.dart';
-import 'platform/audio_upload_web.dart';
-import 'platform/audio_upload_mobile.dart';
+import 'platform/audio_upload_mobile.dart'
+    if (dart.library.html) 'platform/audio_upload_web.dart';
 
 class AudioService {
   static String get _defaultBaseUrl {
@@ -20,7 +20,7 @@ class AudioService {
 
   AudioService(this._prefs) {
     baseUrl = _defaultBaseUrl;
-    _platform = kIsWeb ? AudioUploadWeb() : AudioUploadMobile();
+    _platform = AudioUpload();
   }
 
   String? get token => _prefs.getString('jwt_token');
@@ -97,4 +97,4 @@ class AudioService {
       rethrow;
     }
   }
-} 
+}
